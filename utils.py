@@ -5,7 +5,9 @@ import numpy as np
 from torch import nn
 from pdb import set_trace
 import matplotlib.pyplot as plt
-
+import torch.nn.functional as F
+from torch.autograd import Variable
+from math import exp
     
 
 def show_images(inputs, outputs, num_images= 5):
@@ -76,15 +78,7 @@ class Noise(object):
     
     def __repr__(self):
         return self.__class__.__name__ + 'mean = {0}, dev= {1}', format(self.mean, self.dev)
-    
 
-
-
-import torch
-import torch.nn.functional as F
-from torch.autograd import Variable
-import numpy as np
-from math import exp
 
 def gaussian(window_size, sigma):
     gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
