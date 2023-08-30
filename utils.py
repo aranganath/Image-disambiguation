@@ -28,6 +28,40 @@ def show_images(inputs, outputs, num_images= 5):
             fig.add_subplot(rows, num_images, i+1)
             plt.imshow(outputs[i%num_images, 1])
 
+
+def show_images_rgb(inputs, outputs, num_images= 5, grayscale=False):
+    
+    fig = plt.figure(figsize = (20, 14))
+    rows = 4
+    j=0
+    if not grayscale:
+        for i in range(0, rows*num_images):
+            if i >=0 and i <num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                plt.imshow(inputs[i%num_images].permute(1,2,0))
+            
+            if i >= num_images and i < 2*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                plt.imshow(outputs[i%num_images,:3].permute(1,2,0))
+            
+            if i >= 2*num_images and i < 3*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                plt.imshow(outputs[i%num_images,3:].permute(1,2,0))
+    else:
+        for i in range(0, rows*num_images):
+            if i >=0 and i <num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                plt.imshow(inputs[i%num_images,0], cmap='gray')
+            
+            if i >= num_images and i < 2*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                plt.imshow(outputs[i%num_images,0], cmap='gray')
+            
+            if i >= 2*num_images and i < 3*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                plt.imshow(outputs[i%num_images,1], cmap='gray')
+
+
 #Print only the output images
 def show_outputs(outputs, targets, inputs, num_images= 4):
     
@@ -53,6 +87,85 @@ def show_outputs(outputs, targets, inputs, num_images= 4):
         if i >= 4*num_images and i < 5*num_images:
             fig.add_subplot(rows, num_images, i+1)
             plt.imshow(targets[i%num_images, 1].detach().cpu())
+
+def show_outputs_rgb(TransformerOutputs, RNNOutputs, targets, inputs, num_images= 4, gray = False):
+    
+    fig = plt.figure(figsize = (20, 14))
+    rows = 7
+
+    if not gray:
+        for i in range(0, rows*num_images):
+            if i >=0 and i < num_images:
+                fig.add_subplot(rows, num_images, i+1).axis('off')
+                plt.imshow(inputs[i%num_images].permute(1,2,0).detach().cpu())
+            
+            if i >= num_images and i < 2*num_images:
+                fig.add_subplot(rows, num_images, i+1).axis('off')
+                plt.imshow(TransformerOutputs[i%num_images,:3].permute(1,2,0).detach().cpu())
+            
+            if i >= 2*num_images and i < 3*num_images:
+                fig.add_subplot(rows, num_images, i+1).axis('off')
+                plt.imshow(TransformerOutputs[i%num_images,3:].permute(1,2,0).detach().cpu())
+                        
+            if i >= 3*num_images and i < 4*num_images:
+                fig.add_subplot(rows, num_images, i+1).axis('off')
+                plt.imshow(RNNOutputs[i%num_images,0].detach().cpu(), cmap='gray')
+            
+            if i >= 4*num_images and i < 5*num_images:
+                fig.add_subplot(rows, num_images, i+1).axis('off')
+                plt.imshow(RNNOutputs[i%num_images,1].detach().cpu(), cmap='gray')
+                
+            if i >= 5*num_images and i < 6*num_images:
+                fig.add_subplot(rows, num_images, i+1).axis('off')
+                plt.imshow(targets[i%num_images, :3].permute(1,2,0).detach().cpu())
+            
+            if i >= 6*num_images and i < 7*num_images:
+                fig.add_subplot(rows, num_images, i+1).axis('off')
+                plt.imshow(targets[i%num_images, 3:].permute(1,2,0).detach().cpu())
+    else:
+        for i in range(0, rows*num_images):
+            if i >=0 and i < num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                if i ==0:
+                    fig.axes[i].set_ylabel('Inputs')
+                plt.imshow(inputs[i%num_images,0].detach().cpu())
+            
+            if i >= num_images and i < 2*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                if i == num_images:
+                    fig.axes[i].set_ylabel('Transformer o/p1')
+                plt.imshow(TransformerOutputs[i%num_images,0].detach().cpu())
+                
+            
+            if i >= 2*num_images and i < 3*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                if i == 2*num_images:
+                    fig.axes[i].set_ylabel('Transformer o/p2')
+                plt.imshow(TransformerOutputs[i%num_images,1].detach().cpu())
+            
+            if i >= 3*num_images and i < 4*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                if i == 3*num_images:
+                    fig.axes[i].set_ylabel('RNN o/p1')
+                plt.imshow(RNNOutputs[i%num_images,0].detach().cpu())
+            
+            if i >= 4*num_images and i < 5*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                if i == 4*num_images:
+                    fig.axes[i].set_ylabel('RNN o/p2')
+                plt.imshow(RNNOutputs[i%num_images,1].detach().cpu())
+            
+            if i >= 5*num_images and i < 6*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                if i == 5*num_images:
+                    fig.axes[i].set_ylabel('Target 1')
+                plt.imshow(targets[i%num_images, 0].detach().cpu())
+                
+            if i >= 6*num_images and i < 7*num_images:
+                fig.add_subplot(rows, num_images, i+1)
+                if i == 6*num_images:
+                    fig.axes[i].set_ylabel('Target 2')
+                plt.imshow(targets[i%num_images, 1].detach().cpu())
 
 
 

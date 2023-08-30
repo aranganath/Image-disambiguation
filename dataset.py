@@ -10,6 +10,8 @@ from PIL import Image
 import os
 from urllib.error import URLError
 import numpy as np
+from pdb import set_trace
+import pickle as pkl
 
 class MNISTsuperimposed(VisionDataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
@@ -68,10 +70,13 @@ class MNISTsuperimposed(VisionDataset):
     def __init__(
             self,
             root,
+            permutation = None,
             train= True,
             transform = None,
             target_transform = None,
             download = False,
+            randperm = False,
+
     ):
         super(MNISTsuperimposed, self).__init__(root, transform=transform,
                                     target_transform=target_transform)
@@ -87,7 +92,12 @@ class MNISTsuperimposed(VisionDataset):
             raise RuntimeError('Dataset not found.' +
                                ' You can use download=True to download it')
 
+        self.randperm = randperm
+
+        self.permutation = permutation
+
         self.data, self.targets = self._load_data()
+
         
     def _check_legacy_exist(self):
         processed_folder_exists = os.path.exists(self.processed_folder)
@@ -109,10 +119,40 @@ class MNISTsuperimposed(VisionDataset):
         data = read_image_file(os.path.join(self.raw_folder, image_file))
         #Technically, we do not even need the labels for now
         # We just need the clean images of both types
-        randata = data[torch.randperm(data.shape[0]),:,:]
+
+        if self.permutation is not None:
+        
+            randata = data[self.permutation, :,:]
+            
+        else:
+            if self.train:
+                if os.path.isfile('./permutations/permutation_train.pkl'):
+                    print('Using path ./permutations/permutation_train.pkl')
+                    with open('./permutations/permutation_train.pkl', 'rb') as handle:
+                        self.permutation = pkl.load(handle)
+                else:
+                    print('Permutation is NoneType, reverting to random sequences')
+                    self.permutation = torch.randperm(data.shape[0])
+                    randata = data[self.permutation,:,:]
+                    with open('./permutations/permutation_train.pkl', 'wb') as handle:
+                        pkl.dump(self.permutation, handle)
+
+            else:
+                if os.path.isfile('./permutations/permutation_test.pkl'):
+                    print('Using path ./permutations/permutation_test.pkl')
+                    with open('./permutations/permutation_test.pkl', 'rb') as handle:
+                        self.permutation = pkl.load(handle)
+                else:
+                    print('Permutation is NoneType, reverting to random sequences')
+                    self.permutation = torch.randperm(data.shape[0])
+                    randata = data[self.permutation,:,:]
+                    with open('./permutations/permutation_test.pkl', 'wb') as handle:
+                        pkl.dump(self.permutation, handle)
+
+        randata = data[self.permutation, :, :]
+        
         targets = (data, randata)
-        
-        
+
         # Now do the ambiguation here
         data1 = data + randata
         targets = (data, randata)
@@ -200,7 +240,7 @@ class MNISTsuperimposed(VisionDataset):
     
 
 
-class CIFAR10(VisionDataset):
+class CIFAR10superimposed(VisionDataset):
     """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
     Args:
@@ -276,9 +316,14 @@ class CIFAR10(VisionDataset):
                     self.targets.extend(entry["labels"])
                 else:
                     self.targets.extend(entry["fine_labels"])
-
+        # generate the random data
         self.data = np.vstack(self.data).reshape(-1, 3, 32, 32)
-        self.data = self.data.transpose((0, 2, 3, 1))  # convert to HWC
+        self.randData = self.data[torch.randperm(self.data.shape[0]),:,:]
+        self.data = (
+            self.data.transpose((0, 2, 3, 1)), 
+            self.randData.transpose((0, 2, 3, 1)), 
+            self.data.transpose((0, 2, 3, 1)) + self.randData.transpose((0, 2, 3, 1))
+        )  # convert to HWC
 
         self._load_meta()
 
@@ -299,22 +344,27 @@ class CIFAR10(VisionDataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], self.targets[index]
+        img1, img2, superimposed , target = self.data[0][index], self.data[1][index], self.data[2][index], self.targets[index]
+
+
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img)
+        img1 = Image.fromarray(img1)
+        img2 = Image.fromarray(img2)
+        superimposed = Image.fromarray(superimposed)
 
         if self.transform is not None:
-            img = self.transform(img)
+            superimposed = self.transform(superimposed)
 
         if self.target_transform is not None:
-            target = self.target_transform(target)
+            img1 = self.target_transform(img1)
+            img2 = self.target_transform(img2)
 
-        return img, target
+        return superimposed, torch.cat([img1, img2], axis = 0), target
 
     def __len__(self) -> int:
-        return len(self.data)
+        return self.data[0].shape[0]
 
     def _check_integrity(self) -> bool:
         for filename, md5 in self.train_list + self.test_list:
@@ -334,7 +384,7 @@ class CIFAR10(VisionDataset):
         return f"Split: {split}"
 
 
-class CIFAR100(CIFAR10):
+class CIFAR100(CIFAR10superimposed):
     """`CIFAR100 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
     This is a subclass of the `CIFAR10` Dataset.
