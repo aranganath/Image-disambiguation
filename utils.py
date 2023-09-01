@@ -90,8 +90,9 @@ def show_outputs(outputs, targets, inputs, num_images= 4):
 
 def show_outputs_rgb(TransformerOutputs, RNNOutputs, targets, inputs, num_images= 4, gray = False):
     
-    fig = plt.figure(figsize = (20, 14))
+    fig = plt.figure(figsize = (40, 30))
     rows = 7
+    criterion = torch.nn.MSELoss()
 
     if not gray:
         for i in range(0, rows*num_images):
@@ -135,6 +136,12 @@ def show_outputs_rgb(TransformerOutputs, RNNOutputs, targets, inputs, num_images
                 if i == num_images:
                     fig.axes[i].set_ylabel('Transformer o/p1')
                 plt.imshow(TransformerOutputs[i%num_images,0].detach().cpu())
+                loss1 = criterion(TransformerOutputs[i%num_images,0].detach().cpu(), targets[i%num_images, 0].detach().cpu())
+                loss2 = criterion(TransformerOutputs[i%num_images,0].detach().cpu(), targets[i%num_images, 1].detach().cpu())
+                if loss1< loss2:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss1.item()))
+                else:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss2.item()))
                 
             
             if i >= 2*num_images and i < 3*num_images:
@@ -142,24 +149,43 @@ def show_outputs_rgb(TransformerOutputs, RNNOutputs, targets, inputs, num_images
                 if i == 2*num_images:
                     fig.axes[i].set_ylabel('Transformer o/p2')
                 plt.imshow(TransformerOutputs[i%num_images,1].detach().cpu())
+                loss1 = criterion(TransformerOutputs[i%num_images,1].detach().cpu(), targets[i%num_images, 0].detach().cpu())
+                loss2 = criterion(TransformerOutputs[i%num_images,1].detach().cpu(), targets[i%num_images, 1].detach().cpu())
+                if loss1< loss2:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss1.item()))
+                else:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss2.item()))
             
             if i >= 3*num_images and i < 4*num_images:
                 fig.add_subplot(rows, num_images, i+1)
                 if i == 3*num_images:
                     fig.axes[i].set_ylabel('RNN o/p1')
                 plt.imshow(RNNOutputs[i%num_images,0].detach().cpu())
+                loss1 = criterion(RNNOutputs[i%num_images,0].detach().cpu(), targets[i%num_images, 0].detach().cpu())
+                loss2 = criterion(RNNOutputs[i%num_images,0].detach().cpu(), targets[i%num_images, 1].detach().cpu())
+                if loss1< loss2:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss1.item()))
+                else:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss2.item()))
             
             if i >= 4*num_images and i < 5*num_images:
                 fig.add_subplot(rows, num_images, i+1)
                 if i == 4*num_images:
                     fig.axes[i].set_ylabel('RNN o/p2')
                 plt.imshow(RNNOutputs[i%num_images,1].detach().cpu())
+                loss1 = criterion(RNNOutputs[i%num_images,1].detach().cpu(), targets[i%num_images, 0].detach().cpu())
+                loss2 = criterion(RNNOutputs[i%num_images,1].detach().cpu(), targets[i%num_images, 1].detach().cpu())
+                if loss1< loss2:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss1.item()))
+                else:
+                    fig.axes[i].set_xlabel('MSE: '+str(loss2.item()))
             
             if i >= 5*num_images and i < 6*num_images:
                 fig.add_subplot(rows, num_images, i+1)
                 if i == 5*num_images:
                     fig.axes[i].set_ylabel('Target 1')
                 plt.imshow(targets[i%num_images, 0].detach().cpu())
+                
                 
             if i >= 6*num_images and i < 7*num_images:
                 fig.add_subplot(rows, num_images, i+1)
