@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from torch.autograd import Variable
 from math import exp
+import seaborn as sns
+import pandas as pd
     
 
 def show_images(inputs, outputs, num_images= 5):
@@ -295,3 +297,74 @@ def ssim(img1, img2, window_size = 11, size_average = True):
     window = window.type_as(img1)
     
     return _ssim(img1, img2, window, window_size, channel, size_average)
+
+
+def fetch_mse_ssim(dataset, model, transformer, sparse = True):
+    
+    mse = nn.MSELoss()
+    ssim = SSIM()
+    # If you want to only choose a few samples
+    # Make sure dataset has a batchsize greater than 1
+    if sparse:
+
+        # Check if dataset has greater than batch size one
+        mse_list, ssim_list = [], []
+        for i, (inputs, targets) in enumerate(dataset):
+            if transformer:
+                outputs = model(inputs)
+            else:
+                outputs = model(inputs, flag = False)
+                outputs = torch.cat([outputs[1].reshape(-1,1,28,28), outputs[2].reshape(-1,1,28,28)], axis = 1)
+            
+            loss1 = mse(outputs[0,1].detach().cpu(), targets[0, 0].detach().cpu())
+            ssim1 = ssim(outputs[0,1].reshape(1,1,28,28).detach().cpu(), targets[0, 0].reshape(1,1,28,28).detach().cpu())
+            ssim2 = ssim(outputs[0,1].reshape(1,1,28,28).detach().cpu(), targets[0, 1].reshape(1,1,28,28).detach().cpu())
+            loss2 = mse(outputs[0,1].detach().cpu(), targets[0, 1].detach().cpu())
+            if ssim1>ssim2:
+                mse_list.append(loss1.item())
+                ssim_list.append(ssim1.item())
+            else:
+                mse_list.append(loss2.item())
+                ssim_list.append(ssim2.item())
+    
+    return mse_list, ssim_list
+
+
+
+def sns_plotter(mseDict, ssimDict, savefig=False):
+
+
+    # Convert the dictionary into a DataFrame
+    df_mse  = pd.DataFrame(mseDict)
+    df_ssim = pd.DataFrame(ssimDict)
+
+    # Set up the plot
+    # Change plotting parameters
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": "Times New Roman"
+    })
+    plt.figure(figsize=(8, 6))
+    sns.set(style="whitegrid")  # You can choose different styles
+
+    # Create the boxplot
+    ax = sns.boxplot(data=df_mse, palette="Set3")
+
+    # Add title and labels
+    plt.title("MSE", fontsize=25)
+
+
+    # Customize further if needed (e.g., add grid, adjust font sizes, etc.)
+    plt.xticks(rotation=0, fontsize=20) 
+    plt.yticks(fontsize=14)
+
+    # Save the plot (optional)
+    if savefig:
+        if not os.path.isdir('./figures'):
+            print('figures path does not exist. Making it..')
+            os.mkdir('figures')
+        
+        plt.savefig("./figures/boxplot_mse.png", dpi=300, bbox_inches="tight")
+
+    # Show the plot
+    plt.show()
